@@ -7,12 +7,15 @@ from sqlalchemy.orm import Session
 
 # Internal imports
 from models import Conversation, SessionLocal
-from utils import send_message, search_db, logger
+from utils import send_message, logger, chat
 
+from langchain.memory import ConversationBufferMemory
 
 app = FastAPI()
 # Set up the OpenAI API client
 openai.api_key = config("OPENAI_API_KEY")
+
+memory = ConversationBufferMemory(memory_key="chat_history",input_key="text", return_messages=True)
 
 # Dependency
 def get_db():
@@ -33,8 +36,8 @@ async def reply(request: Request, Body: str = Form(), db: Session = Depends(get_
     form_data = await request.form()
     whatsapp_number = form_data['From'].split("whatsapp:")[-1]
     print(f"Sending the ChatGPT response to this number: {whatsapp_number}")
-
-    chatgpt_response = search_db(Body)
+    print(Body)
+    chatgpt_response = chat(Body, memory=memory)
 
     # Store the conversation in the database
     try:
