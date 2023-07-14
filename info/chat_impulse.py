@@ -1,3 +1,7 @@
+from dotenv import dotenv_values
+env_vars = dotenv_values(".env")
+OPENAI_API_KEY = env_vars['OPENAI_API_KEY']
+
 #Librerias para las cadenas y memoria
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
@@ -27,7 +31,7 @@ from langchain.schema import (
 def vector_qa(direc_marca):
     #Directorio donde se guarda toda la info de los embeddings en chroma
     persist_directory=direc_marca
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     vectordb = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
 
     #Template que se le va a pasar ael retrieval para que obtenga la info que quiero (A/B test)
@@ -42,7 +46,7 @@ def vector_qa(direc_marca):
     )
     chain_type_kwargs = {"prompt": PROMPT}
     #qa impulse es la herramienta con la que haremos retrieval de documentos, retorna texto
-    qa_marca = RetrievalQA.from_chain_type(llm=ChatOpenAI(), chain_type= "stuff", retriever = vectordb.as_retriever(), chain_type_kwargs=chain_type_kwargs)
+    qa_marca = RetrievalQA.from_chain_type(llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY), chain_type= "stuff", retriever = vectordb.as_retriever(), chain_type_kwargs=chain_type_kwargs)
     
     return qa_marca
 
@@ -66,7 +70,7 @@ def chat_prompt():
 def chat(qa_marca):
     #Inicializar la memoria
     memory = ConversationBufferMemory(memory_key="chat_history",input_key="text", return_messages=True)
-    chat=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    chat=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=OPENAI_API_KEY)
     chain = LLMChain(llm=chat, prompt=chat_prompt(), memory=memory, verbose=True)
     while True:
         pregunta = input()
@@ -77,7 +81,7 @@ def chat(qa_marca):
         print(resp_ia)
 
 if __name__ == "__main__":
-    directorio = "impulse_chroma"
+    directorio = "wizeline_chroma"
     qa_marca = vector_qa(directorio)
     chat(qa_marca=qa_marca)
 
